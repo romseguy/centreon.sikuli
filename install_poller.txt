@@ -139,7 +139,7 @@ visudo
 	-- Création des scripts Sikuli d'exemple
 	centreon.sikuli @ http://github.com/worm/centreon.sikuli/
 	clickrdp.sikuli @ http://github.com/worm/centreon.sikuli/
-	-- Mettre ces fichiers dans /usr/local/sikuli
+	-- Mettre ces dossiers dans /usr/local/sikuli
 
 	-- Création du plugin /usr/local/plugins/libexec/check_sikuli
 	check_sikuli @ http://github.com/worm/centreon.sikuli/

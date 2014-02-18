@@ -11,6 +11,7 @@ CAT="/bin/cat"
 RM="/bin/rm"
 CHMOD="/bin/chmod"
 TOUCH="/bin/touch"
+MKDIR="/bin/mkdir"
 
 PROGNAME=`/usr/bin/basename $0`
 PROGPATH=`echo $0 | sed -e 's,[\\/][^\\/][^\\/]*$,,'`
@@ -88,24 +89,32 @@ while test -n "$1"; do
     shift
 done
 
+# check if all paths exist and are readable
 if [ ! -d "$test_path" ]; then
     $ECHO "Sikuli check error: Test directory path $test_path does not exist!\n"
     exit $STATE_UNKNOWN
-elif [ ! -r "$test_path" ] ; then
-    $ECHO "Sikuli check error: Test directory path $test_path is not readable!\n"
-    exit $STATE_UNKNOWN
+elif [ ! -r "$test_path" ]; then
+    $CHMOD -R 777 "$test_path"
 fi
 
 if [ ! -d "$lib_path" ]; then
     $ECHO "Sikuli check error: Lib directory path $lib_path does not exist!\n"
     exit $STATE_UNKNOWN
-elif [ ! -r "$lib_path" ] ; then
-    $ECHO "Sikuli check error: Lib directory path $lib_path is not readable!\n"
-    exit $STATE_UNKNOWN
+elif [ ! -r "$lib_path" ]; then
+    $CHMOD 777 "$lib_path"
+fi
+
+if [ ! -d "$lib_path/logs" ]; then
+    $MKDIR "$lib_path/logs"
+    $CHMOD 777 "$lib_path/logs"
+elif [ ! -r "$lib_path/logs" ]; then
+    $CHMOD 777 "$log_file"
 fi
 
 if [ ! -e "$log_file" ]; then
     $TOUCH "$log_file"
+    $CHMOD 777 "$log_file"
+elif [ ! -r "$log_file" ]; then
     $CHMOD 777 "$log_file"
 fi
 
