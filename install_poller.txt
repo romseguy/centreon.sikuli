@@ -1,0 +1,144 @@
+-- Poller
+-- Installation suite Centreon
+http://eric.coquard.free.fr/atelier/supervision/engine/centengine.html
+
+-- Permissions utilisateurs/groupes
+groupadd -g 6000 centreon
+useradd -u 6000 -g centreon -m -r -d /var/lib/centreon -c "Centreon admin" centreon
+usermod -aG centreon-engine centreon
+usermod -aG centreon-broker centreon
+usermod -aG centreon centreon-engine
+usermod -aG centreon centreon-broker
+groups centreon
+	> centreon : centreon centreon-engine centreon-broker
+groups centreon-engine
+	> centreon-engine : centreon-engine centreon-broker centreon
+groups centreon-broker
+	> centreon-broker : centreon-broker centreon
+
+chown -R centreon-engine:centreon-engine /usr/local/centreon-engine/
+chmod g+w /usr/local/centreon-engine/etc
+chmod g+w /usr/local/centreon-engine/etc/resource.cfg /usr/local/centreon-engine/etc/centengine.cfg
+
+chown -R centreon-broker:centreon-broker /usr/local/centreon-broker/
+chmod g+w /usr/local/centreon-broker/etc
+
+mkdir /var/log/centreon-broker
+chown -R centreon-broker:centreon-broker /var/log/centreon-broker
+chmod -R g+w /var/log/centreon-broker
+
+-- centreon-engine stocke son fichier .lock ici par défaut mais Ubuntu efface ce dossier à chaque redémarrage de la machine
+mkdir /var/lock/subsys
+
+visudo
+-- et ajouter à la fin
+	## BEGIN: CENTREON SUDO
+	User_Alias      CENTREON=apache,nagios,centreon,centreon-engine,centreon-broker
+	Defaults:CENTREON !requiretty
+	## Snmptrapd Restart
+	CENTREON   ALL = NOPASSWD: /etc/init.d/snmptt restart
+	## CentStorage
+	CENTREON   ALL = NOPASSWD: /etc/init.d/centstorage *
+	# Centengine Restart
+	CENTREON   ALL = NOPASSWD: /etc/init.d/centengine restart
+	# Centengine stop
+	CENTREON   ALL = NOPASSWD: /etc/init.d/centengine start
+	# Centengine stop
+	CENTREON   ALL = NOPASSWD: /etc/init.d/centengine stop
+	# Centengine reload
+	CENTREON   ALL = NOPASSWD: /etc/init.d/centengine reload
+	# Centengine test config
+	CENTREON   ALL = NOPASSWD: /usr/sbin/centengine -v *
+	# Centengine test for optim config
+	CENTREON   ALL = NOPASSWD: /usr/sbin/centengine -s *
+	# Broker Central restart
+	CENTREON   ALL = NOPASSWD: /etc/init.d/cbd restart
+	# Broker Central reload
+	CENTREON   ALL = NOPASSWD: /etc/init.d/cbd reload
+	# Broker Central start
+	CENTREON   ALL = NOPASSWD: /etc/init.d/cbd start
+
+	CENTREON   ALL = NOPASSWD: /etc/init.d/centengine restart
+	# Centengine stop
+	CENTREON   ALL = NOPASSWD: /etc/init.d/centengine start
+	# Centengine stop
+	CENTREON   ALL = NOPASSWD: /etc/init.d/centengine stop
+	# Centengine reload
+	CENTREON   ALL = NOPASSWD: /etc/init.d/centengine reload
+	# Centengine test config
+	CENTREON   ALL = NOPASSWD: /usr/sbin/centengine -v *
+	# Centengine test for optim config
+	CENTREON   ALL = NOPASSWD: /usr/sbin/centengine -s *
+	# Broker Central restart
+	CENTREON   ALL = NOPASSWD: /etc/init.d/cbd restart
+	# Broker Central reload
+	CENTREON   ALL = NOPASSWD: /etc/init.d/cbd reload
+	# Broker Central start
+	CENTREON   ALL = NOPASSWD: /etc/init.d/cbd start
+	# Broker Central stop
+	CENTREON   ALL = NOPASSWD: /etc/init.d/cbd stop
+
+-- Central
+	-- Configuration > Monitoring Engines > main.cfg
+	-- Configuration > Monitoring Engines > resources : $USER1$ /usr/local/plugins/libexec
+	-- Configuration > Hosts > centreon-dev-poller3
+	-- Configuration > Centreon > Pollers
+	-- Configuration > Centreon > Pollers > Centreon-Broker > Configuration
+	-- Création des clés SSH
+	su - centreon
+	ssh-keygens
+	sh-copy-id -i .ssh/id_rsa.pub centreon@centreon-dev-poller3
+
+	-- Troubleshoot
+	echo '' /var/log/centreon/centcore.log > && clear && tail -f /var/log/centreon/centcore.log
+
+-- Poller: Sikuli
+	-- Dependences
+	apt-get install openjdk-6-jre libtesseract3 libjpeg-dev libtiff4-dev libjasper-dev libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev 
+	
+	-- OpenCV
+	cd /usr/local/src
+	wget http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.4.3/OpenCV-2.4.3.tar.bz2
+	tar -xf OpenCV-2.4.3.tar.bz2
+	cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D WITH_V4L=OFF -D WITH_FFMPEG=OFF -D WITH_OPENGL=OFF -D WITH_TBB=OFF ..
+	-- mettre WITH_TBB=ON si on veut tirer avantage d'un processeur multi-coeurs
+	make && make install
+	sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv.conf'
+	ldconfig
+
+	-- Installation
+	mkdir /usr/local/sikuli
+	cd /usr/local/sikuli
+	wget https://launchpad.net/sikuli/sikulix/1.0.1/+download/sikuli-setup.jar
+	java -jar sikuli-setup.jar -- choisir la 1ère option au cours de l'installation
+
+	-- Installation Apache httpd pour mettre en ligne les rapports de test
+	apt-get install apache2
+	-- rajouter ServerName localhost dans /etc/apache2/apache2.conf
+	-- rajouter dans /etc/apache2/sites-available/default
+		Alias /sikuli /usr/local/sikuli/logs/
+		<Directory /usr/local/sikuli/logs/>
+		        Options Indexes FollowSymLinks MultiViews
+		        AllowOverride None
+		        Order allow,deny
+		        allow from all
+		</Directory>
+
+	-- Création du plugin /usr/local/plugins/libexec/check_sikuli
+	http://github.com/worm/centreon.sikuli/check_sikuli
+	chmod +x /usr/local/plugins/libexec/check_sikuli
+
+	-- Configuration de lightdm pour exécuter un script au démarrage permettant à n'importe quel utilisateur d'exécuter une application graphique
+	nano /home/user-project/xhost.sh
+		#!/bin/bash
+		xhost +
+	nano /etc/lightdm/lightdm.conf
+		display-setup-script=/home/user-project/xhost.sh
+
+	-- Configuration d'Unity pour désactiver le screen lock
+	System Settings > Brightness and lock > Lock off
+	System Settings > Brightness and lock > Turn screen off when inactive for > Never
+	System Settings > Brightness and lock > Décocher > Require my password for waking from suspend
+	
+	-- Création des scripts Sikuli d'exemple
+

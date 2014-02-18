@@ -1,0 +1,123 @@
+#!/bin/bash
+#
+# Usage: ./check_sikuli <test_path> <warning_treshold> <critical_treshold> <log_file> 
+#
+
+ECHO="/bin/echo"
+GREP="/bin/egrep"
+DIFF="/usr/bin/diff"
+TAIL="/usr/bin/tail"
+CAT="/bin/cat"
+RM="/bin/rm"
+CHMOD="/bin/chmod"
+TOUCH="/bin/touch"
+
+PROGNAME=`/usr/bin/basename $0`
+PROGPATH=`echo $0 | sed -e 's,[\\/][^\\/][^\\/]*$,,'`
+REVISION="1.0"
+
+. $PROGPATH/utils.sh
+
+print_usage() {
+    echo "Usage: $PROGNAME -t test_path -i lib_path -w warning_treshold -c critical_treshold -o log_file"
+    echo "Usage: $PROGNAME --help"
+    echo "Usage: $PROGNAME --version"
+}
+
+print_help() {
+    print_revision $PROGNAME $REVISION
+    echo ""
+    print_usage
+    echo ""
+    echo "Sikuli check plugin for Centreon"
+    echo ""
+    support
+}
+
+if [ $# -lt 1 ]; then
+    print_usage
+    exit $STATE_UNKNOWN
+fi
+
+exitstatus=$STATE_WARNING
+
+while test -n "$1"; do
+    case "$1" in
+        --help)
+            print_help
+            exit $STATE_OK
+            ;;
+        -h)
+            print_help
+            exit $STATE_OK
+            ;;
+        --version)
+            print_revision $PROGNAME $REVISION
+            exit $STATE_OK
+            ;;
+        -V)
+            print_revision $PROGNAME $REVISION
+            exit $STATE_OK
+            ;;
+        -t)
+            test_path=$2
+            shift
+            ;;
+        -i)
+            lib_path=$2
+            shift
+            ;;
+        -w)
+            warning=$2
+            shift
+            ;;
+        -c)
+            critical=$2
+            shift
+            ;;
+        -o)
+            log_file=$2
+            shift
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            print_usage
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+
+if [ ! -d "$test_path" ]; then
+    $ECHO "Sikuli check error: Test directory path $test_path does not exist!\n"
+    exit $STATE_UNKNOWN
+elif [ ! -r "$test_path" ] ; then
+    $ECHO "Sikuli check error: Test directory path $test_path is not readable!\n"
+    exit $STATE_UNKNOWN
+fi
+
+if [ ! -d "$lib_path" ]; then
+    $ECHO "Sikuli check error: Lib directory path $lib_path does not exist!\n"
+    exit $STATE_UNKNOWN
+elif [ ! -r "$lib_path" ] ; then
+    $ECHO "Sikuli check error: Lib directory path $lib_path is not readable!\n"
+    exit $STATE_UNKNOWN
+fi
+
+if [ ! -e "$log_file" ]; then
+    $TOUCH "$log_file"
+    $CHMOD 777 "$log_file"
+fi
+
+ide_path=$(locate runIDE)
+
+if [ ! -z "$ide_path" -a "$ide_path" != " " ]; then
+    DISPLAY=:0; export DISPLAY
+    status=$("$ide_path" -r "$test_path" --args "$lib_path $warning $critical $log_file" 3>&1 1>&2 2>&3 3>&-)
+    exitstatus=$?
+    $ECHO "$status"
+    exit $exitstatus
+else
+    $ECHO "Sikuli check error: Sikuli IDE could not be found!\n"
+    exit $STATE_UNKNOWN
+fi
