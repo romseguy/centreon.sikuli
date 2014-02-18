@@ -2,6 +2,7 @@ from sikuli import *
 import sys
 import time
 import logging
+import math
 
 Settings.ActionLogs = False
 Settings.InfoLogs = False
@@ -11,14 +12,15 @@ warning = sys.argv[2]
 critical = sys.argv[3]
 log_file = sys.argv[4]
 
-logging.basicConfig(filename=log_file, filemode='a', level=logging.DEBUG)
-logging.info("Started " + sys.argv[0] + " @ " + time.strftime('%d/%m/%y %H:%M:%S', time.localtime()))
+fmt = "%(message)s"
+logging.basicConfig(filename=log_file, filemode='a', format=fmt, level=logging.INFO)
+logging.info("<h1>Started " + sys.argv[0] + " @ " + time.strftime('%d/%m/%y %H:%M:%S', time.localtime()) + "</h1>")
 
 def status(exit_code, diff_time, desc='none'):
-	logging.info("error: %s" %(desc))
-	logging.info("execution time: %.1fs" %(diff_time))
 	time_code = getTimeCode(diff_time)
-	logging.info("time code: %s" %(getStatus(time_code)))
+	logging.info("<ul>")
+	logging.info("<li>execution time: %.1fs</li>" %(diff_time))
+	logging.info("<li>time code: %s</li>" %(getStatus(time_code)))
 
 	if exit_code == 0:
 		if time_code == 1:
@@ -26,7 +28,9 @@ def status(exit_code, diff_time, desc='none'):
 		elif time_code == 2:
 			exit_code = 2
 
-	logging.info("exit code: %s" %(getStatus(exit_code)))
+	logging.info("<li>error: %s</li>" %(desc))
+	logging.info("<li>exit code: %s</li>" %(getStatus(exit_code)))
+	logging.info("</ul>")
 
 	output = "CHECKRDP %s - Execution time = %.1fs | time=%.1fs;%s;%s" %(getStatus(exit_code), diff_time, diff_time, warning, critical)
 	output += "\nError: %s" %(desc)
