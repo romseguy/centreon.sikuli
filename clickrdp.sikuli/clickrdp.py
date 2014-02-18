@@ -12,12 +12,11 @@ try:
 	openApp("rdesktop -u 'romain.seguy@uha.fr' -p '$EnsiPro' -g 1024x768 appliweb5")
 except:
 	centreon.status(2, time.time() - begin_test, "openApp failed")
-	closeApp("rdesktop")
 try:
 	wait("start-button.png", 10)
 except:
-	centreon.status(2, time.time() - begin_test, "wait failed")
 	closeApp("rdesktop")
+	centreon.status(2, time.time() - begin_test, "wait failed")
 
 click("start-button.png")
 type("notepad" + Key.ENTER)

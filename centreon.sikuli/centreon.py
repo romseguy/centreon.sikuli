@@ -2,7 +2,6 @@ from sikuli import *
 import sys
 import time
 import logging
-import math
 
 Settings.ActionLogs = False
 Settings.InfoLogs = False
