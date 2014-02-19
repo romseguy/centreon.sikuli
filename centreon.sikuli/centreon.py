@@ -13,7 +13,7 @@ log_file = sys.argv[4]
 
 fmt = "%(message)s"
 logging.basicConfig(filename=log_file, filemode='a', format=fmt, level=logging.INFO)
-logging.info("<h1>%s</h1>" %(sys.argv[1]))
+logging.info("<h1>%s</h1>" %(sys.argv[0]))
 logging.info("<ul>")
 logging.info("<li>Date: " + time.strftime('%d/%m/%y %H:%M:%S', time.localtime()) + "</li>")
 
