@@ -2,7 +2,6 @@ from sikuli import *
 import sys
 import time
 import logging
-import math
 
 Settings.ActionLogs = False
 Settings.InfoLogs = False
@@ -14,11 +13,14 @@ log_file = sys.argv[4]
 
 fmt = "%(message)s"
 logging.basicConfig(filename=log_file, filemode='a', format=fmt, level=logging.INFO)
-logging.info("<h1>Started " + sys.argv[0] + " @ " + time.strftime('%d/%m/%y %H:%M:%S', time.localtime()) + "</h1>")
+logging.info("<h1>%s</h1>" %(sys.argv[1]))
+logging.info("<ul>")
+logging.info("<li>Date: " + time.strftime('%d/%m/%y %H:%M:%S', time.localtime()) + "</li>")
 
 def status(exit_code, diff_time, desc='none'):
 	time_code = getTimeCode(diff_time)
-	logging.info("<ul>")
+	logging.info("<li>Warning treshold: %ss</li>" %(warning))
+	logging.info("<li>Critical treshold: %ss</li>" %(critical))
 	logging.info("<li>execution time: %.1fs</li>" %(diff_time))
 	logging.info("<li>time code: %s</li>" %(getStatus(time_code)))
 
@@ -36,7 +38,7 @@ def status(exit_code, diff_time, desc='none'):
 	output += "\nError: %s" %(desc)
         sys.stderr.write(output) #check_sikuli swaps stderr and stdin
 
-	sys.exit(exit_code)
+	#sys.exit(exit_code)
 	exit(exit_code)
 
 def getTimeCode(diff_time):

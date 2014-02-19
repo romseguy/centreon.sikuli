@@ -1,9 +1,10 @@
+import sys
+
 # append the custom library directory path to the system path
 # so we can import custom modules from this directory such as centreon
 centreon_lib_path = sys.argv[1]
 if not centreon_lib_path in sys.path: sys.path.append(centreon_lib_path)
 
-import sys
 import centreon
 
 begin_test = time.time()
